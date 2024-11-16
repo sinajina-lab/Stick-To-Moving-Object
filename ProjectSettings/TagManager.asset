@@ -7,6 +7,9 @@ TagManager:
   - Coin
   - Magnet
   - death
+  - Planet
+  - PlayerFeet
+  - Candy Planet
   layers:
   - Default
   - TransparentFX
@@ -15,9 +18,9 @@ TagManager:
   - Water
   - UI
   - Ground
-  - 
-  - 
-  - 
+  - Player Layer
+  - collidableLayer
+  - Planet Layer
   - 
   - 
   - 
@@ -43,4 +46,7 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Player
+    uniqueID: 2382947877
     locked: 0
