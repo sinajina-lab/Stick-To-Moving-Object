@@ -10,6 +10,7 @@ public class Count_Points : MonoBehaviour
 
     [SerializeField] int collectable = 0;
     [SerializeField] TMP_Text landedNutsText;
+    [SerializeField] LayerMask candyPlanetLayer; // LayerMask for Candy Planet
 
     private void Awake()
     {
@@ -18,17 +19,14 @@ public class Count_Points : MonoBehaviour
         {
             instance = this;
         }
-        //else
-        //{
-        //    Destroy(gameObject);
-        //}
     }
 
     private void Start()
     {
         if (landedNutsText == null)
         {
-            Debug.LogWarning("landedNutsText is not assigned in the Inspector.");
+            Debug.LogError("landedNutsText is not assigned in the Inspector!");
+            return;
         }
         landedNutsText.text = "" + collectable;
     }
@@ -36,24 +34,46 @@ public class Count_Points : MonoBehaviour
     public void IncreasePoints()
     {
         collectable++;
+        Debug.Log("Points increased to: " + collectable);
+
+        if (landedNutsText == null)
+        {
+            Debug.LogError("landedNutsText is not assigned when trying to update text!");
+            return;
+        }
+
         landedNutsText.text = "" + collectable;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log("Collided with: " + collision.gameObject.name);
-        CandyPlanet candyPlanet = collision.gameObject.GetComponent<CandyPlanet>();
+        Debug.Log("Collision detected with: " + collision.gameObject.name);
 
-        if (candyPlanet != null && !candyPlanet.HasBeenVisited)
+        // Check if the collided object is in the Candy Planet layer
+        if ((candyPlanetLayer & (1 << collision.gameObject.layer)) != 0)
         {
-            IncreasePoints();
-            candyPlanet.HasBeenVisited = true;  // Mark this planet as visited
-            Debug.Log("Candy Planet: " + collectable);
-        }
-    }
+            // Get the CandyPlanet component directly from the collided object
+            CandyPlanet candyPlanet = collision.gameObject.GetComponentInChildren<CandyPlanet>();
 
-    public class CandyPlanet : MonoBehaviour
-    {
-        public bool HasBeenVisited { get; set; } = false;
+            if (candyPlanet == null)
+            {
+                Debug.LogError("CandyPlanet component is missing on " + collision.gameObject.name);
+                return;
+            }
+
+            Debug.Log("HasBeenVisited for " + collision.gameObject.name + ": " + candyPlanet.HasBeenVisited);
+
+            // Award points if the platform hasn't been visited
+            if (!candyPlanet.HasBeenVisited)
+            {
+                IncreasePoints();
+                candyPlanet.HasBeenVisited = true; // Mark platform as visited
+                Debug.Log("Points awarded to: " + collision.gameObject.name);
+            }
+            else
+            {
+                Debug.Log("Already visited: " + collision.gameObject.name);
+            }
+        }
     }
 }
