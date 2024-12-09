@@ -6,25 +6,23 @@ public class Node : MonoBehaviour
 {
     private GameObject player;
     private grappling_user grappling_userScript;
-    private Node node;
 
-    // Start is called before the first frame update
     void Start()
     {
+        // Find the player and its grappling script
         player = GameObject.FindGameObjectWithTag("Player");
-        node = null;
         grappling_userScript = player.GetComponent<grappling_user>();
     }
 
-    public void OnMouseDown()
+    private void OnMouseDown()
     {
-        node = this;
-        grappling_userScript.SelectedNode(node);
+        // When the user clicks on this node, select it
+        grappling_userScript.SelectNode(this);
     }
 
-    public void OnMouseUp()
+    private void OnMouseUp()
     {
-        node = null;
+        // When the user releases the mouse, deselect the node
         grappling_userScript.DeselectNode();
     }
 }
