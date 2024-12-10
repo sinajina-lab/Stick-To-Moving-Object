@@ -4,29 +4,27 @@ using UnityEngine;
 
 public class Bomb : MonoBehaviour
 {
-    PointEffector2D explosionComponent;
-    [SerializeField] CircleCollider2D circleCollider;
+    public delegate void BombDestroyedEvent(Vector3 position);
+    public static event BombDestroyedEvent OnBombDestroyed;
 
-    [SerializeField] GameObject debrisParticles;
+    [SerializeField] private CircleCollider2D circleCollider;
+    [SerializeField] private GameObject debrisParticles;
+    [SerializeField] private float addTorqueAmountInDegrees = 200f;
+    [SerializeField] private float explosionDelay = 3f;
 
-    [SerializeField] float addTorqueAmountInDegrees;
-    [SerializeField] float explosionDelay = 3f; // Time before explosion in seconds
-
+    private PointEffector2D explosionComponent;
     private float explosionRadius;
     private bool isExploding = false;
 
-    // Start is called before the first frame update
     void Start()
     {
         circleCollider = GetComponent<CircleCollider2D>();
         explosionComponent = GetComponent<PointEffector2D>();
 
-        // Disable explosion component initially
         explosionComponent.enabled = false;
         explosionRadius = circleCollider.radius;
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (isExploding)
@@ -53,27 +51,24 @@ public class Bomb : MonoBehaviour
         explosionComponent.enabled = true;
 
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, explosionRadius);
-
-        for (int i = 0; i < colliders.Length; i++)
+        foreach (Collider2D col in colliders)
         {
-            Rigidbody2D rigid = colliders[i].GetComponentInParent<Rigidbody2D>();
+            Rigidbody2D rigid = col.GetComponentInParent<Rigidbody2D>();
             if (rigid != null)
             {
                 rigid.AddTorque(addTorqueAmountInDegrees * Mathf.Deg2Rad * rigid.inertia);
             }
         }
 
-        // Instantiate and play the particle system
-        GameObject particles = Instantiate(debrisParticles, transform.position, Quaternion.identity);
+        OnBombDestroyed?.Invoke(transform.position);
 
-        // Optional: Destroy the particle GameObject after it finishes
+        GameObject particles = Instantiate(debrisParticles, transform.position, Quaternion.identity);
         ParticleSystem particleSystem = particles.GetComponent<ParticleSystem>();
         if (particleSystem != null)
         {
             Destroy(particles, particleSystem.main.duration + particleSystem.main.startLifetime.constantMax);
         }
 
-        // Destroy the bomb after playing particles
         Destroy(this.gameObject);
     }
 }

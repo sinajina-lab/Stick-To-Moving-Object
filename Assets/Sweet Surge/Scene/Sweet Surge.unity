@@ -4096,14 +4096,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resolution: 0
-  waveCount: 0
-  wobbleCount: 0
   waveSize: 0
   animSpeed: 0
-  nodeLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  maxGrappleDistance: 10
 --- !u!232 &1134499502
 DistanceJoint2D:
   m_ObjectHideFlags: 0
@@ -9027,14 +9021,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resolution: 100
-  waveCount: 6
-  wobbleCount: 3
-  waveSize: 2
-  animSpeed: 3
-  nodeLayer:
-    serializedVersion: 2
-    m_Bits: 512
-  maxGrappleDistance: 10
+  waveSize: 5
+  animSpeed: 10
 --- !u!1 &2059868268
 GameObject:
   m_ObjectHideFlags: 0

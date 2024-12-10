@@ -4,25 +4,34 @@ using UnityEngine;
 
 public class Node : MonoBehaviour
 {
-    private GameObject player;
     private grappling_user grappling_userScript;
 
     void Start()
     {
-        // Find the player and its grappling script
-        player = GameObject.FindGameObjectWithTag("Player");
-        grappling_userScript = player.GetComponent<grappling_user>();
+        grappling_userScript = GameObject.FindGameObjectWithTag("Player").GetComponent<grappling_user>();
     }
 
-    private void OnMouseDown()
+    public void OnMouseDown()
     {
-        // When the user clicks on this node, select it
-        grappling_userScript.SelectNode(this);
+        Collider2D[] nearbyNodes = Physics2D.OverlapCircleAll(transform.position, 1f);
+        Node closestNode = this;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (Collider2D col in nearbyNodes)
+        {
+            Node potentialNode = col.GetComponent<Node>();
+            if (potentialNode != null && Vector3.Distance(transform.position, col.transform.position) < closestDistance)
+            {
+                closestDistance = Vector3.Distance(transform.position, col.transform.position);
+                closestNode = potentialNode;
+            }
+        }
+
+        grappling_userScript.SelectedNode(closestNode);
     }
 
-    private void OnMouseUp()
+    public void OnMouseUp()
     {
-        // When the user releases the mouse, deselect the node
         grappling_userScript.DeselectNode();
     }
 }

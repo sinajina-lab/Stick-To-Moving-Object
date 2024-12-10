@@ -8,10 +8,8 @@ public class grappling_user : MonoBehaviour
     private DistanceJoint2D distJoint;
     private Node selectedNode;
 
-    [SerializeField] int resolution, waveCount, wobbleCount;
-    [SerializeField] float waveSize, animSpeed;
-    [SerializeField] LayerMask nodeLayer; // LayerMask for nodes
-    [SerializeField] float maxGrappleDistance = 10f;
+    [SerializeField] private int resolution = 50;
+    [SerializeField] private float waveSize = 1f, animSpeed = 5f;
 
     void Start()
     {
@@ -24,33 +22,17 @@ public class grappling_user : MonoBehaviour
         selectedNode = null;
     }
 
+    private void OnEnable()
+    {
+        Bomb.OnBombDestroyed += HandleBombDestroyed;
+    }
+
+    private void OnDisable()
+    {
+        Bomb.OnBombDestroyed -= HandleBombDestroyed;
+    }
+
     void Update()
-    {
-        HandleScreenTap();
-        NodeBehaviour();
-    }
-
-    public void SelectNode(Node node)
-    {
-        if (node == null) return;
-
-        selectedNode = node;
-        StartCoroutine(AnimateRope(selectedNode.transform.position));
-    }
-
-    public void DeselectNode()
-    {
-        selectedNode = null;
-
-        // Disable the DistanceJoint2D and LineRenderer
-        distJoint.enabled = false;
-        lineRend.enabled = false;
-
-        // Reset LineRenderer points to clear the rope
-        lineRend.positionCount = 0;
-    }
-
-    private void NodeBehaviour()
     {
         if (selectedNode == null)
         {
@@ -64,94 +46,57 @@ public class grappling_user : MonoBehaviour
 
         distJoint.connectedBody = selectedNode.GetComponent<Rigidbody2D>();
 
+        lineRend.SetPosition(0, transform.position);
+        lineRend.SetPosition(1, selectedNode.transform.position);
+    }
+
+    public void SelectedNode(Node node)
+    {
+        selectedNode = node;
         if (selectedNode != null)
         {
-            lineRend.SetPosition(0, transform.position);
-            lineRend.SetPosition(1, selectedNode.transform.position);
+            StartCoroutine(AnimateRope(selectedNode.transform.position));
         }
     }
 
-    private void HandleScreenTap()
+    public void DeselectNode()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            worldPos.z = 0;
-
-            Node nearestNode = FindNearestNode(worldPos);
-
-            if (nearestNode != null)
-            {
-                SelectNode(nearestNode);
-            }
-        }
-    }
-
-    private Node FindNearestNode(Vector3 position)
-    {
-        Collider2D[] nodesInRange = Physics2D.OverlapCircleAll(position, maxGrappleDistance, nodeLayer);
-        Node nearestNode = null;
-        float minDistance = float.MaxValue;
-
-        foreach (var collider in nodesInRange)
-        {
-            Node node = collider.GetComponent<Node>();
-            if (node != null)
-            {
-                float distance = Vector2.Distance(position, node.transform.position);
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    nearestNode = node;
-                }
-            }
-        }
-        return nearestNode;
+        selectedNode = null;
     }
 
     private IEnumerator AnimateRope(Vector3 targetPos)
     {
         lineRend.positionCount = resolution;
-        float angle = LookAtAngle(targetPos - transform.position);
+        float percent = 0f;
 
-        float percent = 0;
         while (percent <= 1f)
         {
             percent += Time.deltaTime * animSpeed;
-            SetPoints(targetPos, percent, angle);
+            SetPoints(targetPos, percent);
             yield return null;
         }
-        SetPoints(targetPos, 1, angle);
+
+        SetPoints(targetPos, 1f);
     }
 
-    private void SetPoints(Vector3 targetPos, float percent, float angle)
+    private void SetPoints(Vector3 targetPos, float percent)
     {
         Vector3 ropeEnd = Vector3.Lerp(transform.position, targetPos, percent);
-        float length = Vector2.Distance(transform.position, ropeEnd);
+        float length = Vector3.Distance(transform.position, ropeEnd);
 
         for (int i = 0; i < resolution; i++)
         {
             float xPos = (float)i / resolution * length;
-            float reversePercent = (1 - percent);
-
-            float amplitude = Mathf.Sin(reversePercent * wobbleCount * Mathf.PI) * ((1f - (float)i / resolution) * waveSize);
-
-            float yPos = Mathf.Sin((float)waveCount * i / resolution * 2 * Mathf.PI * reversePercent) * amplitude;
-
-            Vector2 pos = RotatePoint(new Vector2(xPos + transform.position.x, yPos + transform.position.y), transform.position, angle);
-            lineRend.SetPosition(i, pos);
+            float yPos = Mathf.Sin(i * waveSize * Mathf.PI * 2 / resolution) * (1f - percent);
+            lineRend.SetPosition(i, new Vector3(xPos + transform.position.x, yPos + transform.position.y, 0));
         }
     }
 
-    Vector2 RotatePoint(Vector2 point, Vector2 pivot, float angle)
+    private void HandleBombDestroyed(Vector3 position)
     {
-        Vector2 dir = point - pivot;
-        dir = Quaternion.Euler(0, 0, angle) * dir;
-        return dir + pivot;
-    }
-
-    private float LookAtAngle(Vector2 target)
-    {
-        return Mathf.Atan2(target.y, target.x) * Mathf.Rad2Deg;
+        if (selectedNode != null && Vector3.Distance(selectedNode.transform.position, position) < 0.1f)
+        {
+            DeselectNode();
+        }
     }
 }
